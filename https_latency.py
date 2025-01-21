@@ -1,6 +1,5 @@
 import requests
 import time
-import matplotlib.pyplot as plt
 import os
 from datetime import datetime
 
@@ -34,47 +33,40 @@ def perform_https_test():
             latencies.append(None)  # Hata durumunda None ekle
     return latencies
 
-def generate_report(test_number, latencies):
+def save_results_to_file(test_number, latencies):
     avg_latency = sum([lat for lat in latencies if lat is not None]) / len([lat for lat in latencies if lat is not None])
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    report_path = f"https_latency_reports/report_{test_number}.txt"
-    os.makedirs("https_latency_reports", exist_ok=True)
-    
+    folder_path = "http_latency_test_result"
+    os.makedirs(folder_path, exist_ok=True)
+    report_path = os.path.join(folder_path, f"test_result_{test_number}.txt")
+
     with open(report_path, "w") as f:
         f.write(f"HTTPS Latency Test Report #{test_number}\n")
         f.write(f"Timestamp: {timestamp}\n\n")
         for url, latency in zip(HTTPS_LIST, latencies):
             f.write(f"{url}: {latency if latency is not None else 'Timeout'} ms\n")
         f.write(f"\nAverage Latency: {avg_latency:.2f} ms\n")
-        f.write("\n---\nOxoo Network Agent HTTPS Latency Test\n")
-    
-    return avg_latency
 
-def plot_results():
-    os.makedirs("https_latency_reports", exist_ok=True)
-    plt.figure(figsize=(10, 6))
-    plt.plot(timestamps, test_results, marker="o", linestyle="-")
-    plt.xlabel("Timestamp")
-    plt.ylabel("Average Latency (ms)")
-    plt.title("HTTPS Latency Over Time")
-    plt.grid()
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig("https_latency_reports/https_latency_graph.png")
-    plt.close()
+    return avg_latency
 
 def main():
     test_number = 1
     while True:
         print(f"Starting Test #{test_number}")
         latencies = perform_https_test()
-        avg_latency = generate_report(test_number, latencies)
+        avg_latency = save_results_to_file(test_number, latencies)
+
+        # Terminale test sonuçlarını yazdır
+        print(f"\nTest #{test_number} Results:")
+        for url, latency in zip(HTTPS_LIST, latencies):
+            print(f"{url}: {latency if latency is not None else 'Timeout'} ms")
+        print(f"\nAverage Latency: {avg_latency:.2f} ms\n")
+
         test_results.append(avg_latency)
         timestamps.append(datetime.now().strftime("%H:%M:%S"))
-        plot_results()
-        print(f"Test #{test_number} completed. Average Latency: {avg_latency:.2f} ms")
+
         test_number += 1
-        time.sleep(180)  # 3 dakika bekle
+        time.sleep(60)  # 1 dakika bekle
 
 if __name__ == "__main__":
     main()
